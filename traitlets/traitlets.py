@@ -636,6 +636,7 @@ class _CallbackWrapper(object):
             self.cb(change['name'], change['old'], change['new'], change['owner'])
 
 def _callback_wrapper(cb):
+    print("callbackwrapper", file=sys.__stderr__)
     if isinstance(cb, _CallbackWrapper):
         return cb
     else:
@@ -1081,11 +1082,15 @@ class HasTraits(py3compat.with_metaclass(MetaHasTraits, HasDescriptors)):
             If False (the default), then install the handler.  If True
             then unintall it.
         """
+        print("on trait change", file=sys.__stderr__)
         warn("on_trait_change is deprecated: use observe instead",
              DeprecationWarning, stacklevel=2)
+        print("warned", file=sys.__stderr__)
         if name is None:
             name = All
+        print("name", name, file=sys.__stderr__)
         if remove:
+            print("unobserve", file=sys.__stderr__)
             self.unobserve(_callback_wrapper(handler), names=name)
         else:
             self.observe(_callback_wrapper(handler), names=name)
