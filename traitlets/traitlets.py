@@ -2174,8 +2174,8 @@ class Unicode(TraitType):
                     old_s = s
                     s = s[1:-1]
                     warn(
-                        "Supporting extra quotes around strings is deprecated in traitlets 5.0. "
-                        "Use %r instead of %r" % (s, old_s),
+                        "Supporting extra quotes around Unicode is deprecated in traitlets 5.0. "
+                        "Use %r instead of %r – or use CUnicode." % (s, old_s),
                         FutureWarning)
         return s
 
@@ -2479,7 +2479,13 @@ class Container(Instance):
 
     def from_string(self, s):
         """Load value from a single string"""
-        return self.from_string_list([s])
+        if not isinstance(s, str):
+            raise TraitError(f"Expected string, got {s!r}")
+        try:
+            test = literal_eval(s)
+        except Exception:
+            test = None
+        return self.validate(None, test)
 
     def from_string_list(self, s_list):
         """Return the value from a list of config strings
@@ -2892,7 +2898,15 @@ class Dict(Instance):
 
     def from_string(self, s):
         """Load value from a single string"""
-        return self.from_string_list([s])
+        if not isinstance(s, str):
+            raise TypeError(f"from_string expects a list, got {repr(s)} of type {type(s)}")
+        try:
+            return self.from_string_list([s])
+        except Exception:
+            test = _safe_literal_eval(s)
+            if isinstance(test, dict):
+                return test
+            raise
 
     def from_string_list(self, s_list):
         """Return the value from a list of config strings
@@ -2925,12 +2939,11 @@ class Dict(Instance):
 
         Returns a one-key dictionary
         """
+
         if '=' not in s:
             raise TraitError(
-                "'%s' options must have the form 'key=value', got %s" % (
-                    self.__class__.__name__,
-                    s,
-                )
+                "'%s' options must have the form 'key=value', got %s"
+                % (self.__class__.__name__, repr(s),)
             )
         key, value = s.split("=", 1)
 
