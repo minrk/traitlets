@@ -12,7 +12,7 @@ import pathlib
 import pickle
 import re
 import typing as t
-from unittest import TestCase
+from unittest import TestCase, mock
 
 import pytest
 
@@ -3199,3 +3199,19 @@ def test_all_attribute():
     for name in traitlets.__all__:
         if name not in names:
             raise ValueError(f"{name} should be removed from __all__")
+
+
+def test_mock_patch():
+    class A(HasTraits):
+        trait = Unicode(default_value="default")
+
+    a = A()
+    # not set, restores default
+    with mock.patch.object(a, "trait", "patch"):
+        assert a.trait == "patch"
+    assert a.trait == "default"
+    # set, restores before state
+    a.trait = "set"
+    with mock.patch.object(a, "trait", "patch"):
+        assert a.trait == "patch"
+    assert a.trait == "set"

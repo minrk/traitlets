@@ -537,6 +537,9 @@ else:
     V = TypeVar("V")
 
 
+_DELETED = object()
+
+
 # We use a type for the getter (G) and setter (G) because we allow
 # for traits to cast (for instance CInt will use G=int, S=t.Any)
 class TraitType(BaseDescriptor, t.Generic[G, S]):
@@ -726,6 +729,10 @@ class TraitType(BaseDescriptor, t.Generic[G, S]):
         if obj is None:
             return self
         else:
+            if obj._trait_values.get(self.name, None) is _DELETED:
+                # if _DELETED sentinel is set, behave as if attribute is not set
+                # otherwise delattr does weird things
+                raise AttributeError(self.name)
             return self.get(obj, cls)  # type:ignore[return-value]
 
     def set(self, obj: HasTraits, value: S) -> None:
@@ -756,6 +763,12 @@ class TraitType(BaseDescriptor, t.Generic[G, S]):
         if self.read_only:
             raise TraitError(f'The "{self.name}" trait is read-only.')
         self.set(obj, value)
+
+    def __delete__(self, obj: HasTraits) -> None:
+        """
+        delattr stores a sentinel so `hasattr` returns False
+        """
+        obj._trait_values[self.name] = _DELETED
 
     def _validate(self, obj: t.Any, value: t.Any) -> G | None:
         if value is None and self.allow_none:
