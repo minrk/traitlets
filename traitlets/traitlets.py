@@ -729,6 +729,7 @@ class TraitType(BaseDescriptor, t.Generic[G, S]):
         if obj is None:
             return self
         else:
+            assert self.name is not None
             if obj._trait_values.get(self.name, None) is _DELETED:
                 # if _DELETED sentinel is set, behave as if attribute is not set
                 # otherwise delattr does weird things
@@ -768,6 +769,7 @@ class TraitType(BaseDescriptor, t.Generic[G, S]):
         """
         delattr stores a sentinel so `hasattr` returns False
         """
+        assert self.name is not None
         obj._trait_values[self.name] = _DELETED
 
     def _validate(self, obj: t.Any, value: t.Any) -> G | None:
